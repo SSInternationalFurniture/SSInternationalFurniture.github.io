@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 
-const whatsappNumber = '919999999999'
+const whatsappNumber = '919767718095'
 const fallbackImage = '/images/modern-sofa.svg'
 
 const initialCategories = [
@@ -72,8 +72,11 @@ const initialCategories = [
   },
 ]
 
-function buildWhatsAppLink(productName) {
-  const message = encodeURIComponent(`Hello! I would like to ask the price for ${productName}.`)
+function buildWhatsAppLink(product) {
+  const imageUrl = product.images?.[0] || ''
+  const message = encodeURIComponent(
+    `Hello! I would like to ask the price for ${product.name}.${imageUrl ? ` Here is the image: ${imageUrl}` : ''}`,
+  )
   return `https://wa.me/${whatsappNumber}?text=${message}`
 }
 
@@ -83,6 +86,8 @@ function App() {
   const [categoryDrafts, setCategoryDrafts] = useState({})
   const [productDrafts, setProductDrafts] = useState({})
   const [categoryImages, setCategoryImages] = useState({})
+  const [customDesignText, setCustomDesignText] = useState('')
+  const [customDesignImage, setCustomDesignImage] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [adminCode, setAdminCode] = useState('')
 
@@ -180,6 +185,27 @@ function App() {
     }))
   }
 
+  const handleCustomDesignImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => setCustomDesignImage(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  const buildCustomDesignWhatsAppLink = () => {
+    const messageParts = ['Hello! I have a custom furniture design request.']
+    if (customDesignText.trim()) {
+      messageParts.push(`Details: ${customDesignText.trim()}`)
+    }
+    if (customDesignImage) {
+      messageParts.push(`Image: ${customDesignImage}`)
+    }
+    const message = encodeURIComponent(messageParts.join(' '))
+    return `https://wa.me/${whatsappNumber}?text=${message}`
+  }
+
   const addProduct = (parentId, groupId) => {
     const draft = productDrafts[groupId] || {}
     const name = (draft.name || '').trim()
@@ -275,6 +301,26 @@ function App() {
           ))}
         </div>
 
+        <div className="custom-design-panel">
+          <div className="custom-design-form">
+            <input
+              type="text"
+              placeholder="Describe your custom design request"
+              value={customDesignText}
+              onChange={(event) => setCustomDesignText(event.target.value)}
+            />
+            <input type="file" accept="image/*" onChange={handleCustomDesignImageUpload} />
+            <a
+              className="ask-price-btn"
+              href={buildCustomDesignWhatsAppLink()}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Send Design Request
+            </a>
+          </div>
+        </div>
+
         {!isAdmin ? (
           <div className="admin-panel">
             <input
@@ -361,7 +407,7 @@ function App() {
                         <strong>{product.name}</strong>
                         <a
                           className="ask-price-btn"
-                          href={buildWhatsAppLink(product.name)}
+                          href={buildWhatsAppLink(product)}
                           target="_blank"
                           rel="noreferrer"
                         >
